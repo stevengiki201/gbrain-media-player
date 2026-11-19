@@ -2,13 +2,15 @@
 
 An Android-first, offline music & video player built with **Expo (SDK 54)**, **expo-router**, **expo-audio**, **expo-video**, **expo-media-library** and **expo-sqlite**. It scans the device for local media, persists a library, favorites, playlists and playback history, and provides a persistent mini-player plus full-screen music and video players.
 
-The app is designed to run **in Expo Go with no custom native modules, no config plugins and no dev build**.
+The app runs in **Expo Go** for library scanning and playback. Notification playback actions, background media playback and Picture-in-Picture use SDK 54 config plugins and require a **development build**.
 
 ## Features
 
 - **Device scan** – discovers local audio/video via `expo-media-library` and caches metadata in SQLite.
 - **Music playback** – play/pause, seek, next/previous, shuffle and repeat (off/all/one) via a central `PlaybackManager`.
-- **Video playback** – `expo-video` `VideoView` player with a custom full-screen screen.
+- **Video playback** – custom `expo-video` screen with seek, ±10s skip, speed, volume, mute, loop, fullscreen and Picture-in-Picture tools.
+- **Album/video artwork** – cover images discovered beside local audio and lazy video thumbnails generated from the video file.
+- **Notification controls** – Back, Play/Pause and Next actions for active playback in a development build.
 - **Persistent mini-player** – shown above the tab bar, with a full-screen music player.
 - **Playlists** – create, rename, reorder, add/remove songs, delete.
 - **Favorites & history** – quick access to liked tracks and recently played items.
@@ -25,6 +27,7 @@ The app is designed to run **in Expo Go with no custom native modules, no config
 | Audio | expo-audio |
 | Video | expo-video |
 | Media access | expo-media-library |
+| Notifications | expo-notifications |
 | Database | expo-sqlite |
 | File system | expo-file-system (device storage info) |
 | State | MobX + MobX State Tree (stores) + mobx-react-lite |
@@ -37,7 +40,7 @@ npm install
 npx expo start
 ```
 
-Scan the QR code with the **Expo Go** app (Android). On first launch, grant media permissions, then run **Scan device for media** (or enable *Scan on launch*) to populate the library.
+Scan the QR code with the **Expo Go** app (Android) for core playback, or use `npx expo run:android` / an EAS development build for notification controls, background playback and Picture-in-Picture. On first launch, grant media and notification permissions, then run **Scan device for media** (or enable *Scan on launch*) to populate the library.
 
 ## Web
 
@@ -83,15 +86,14 @@ Stores hydrate on launch via `StoreContext` (`Promise.all([...load])`). Device s
 
 ## Expo Go compatibility & limitations
 
-This project deliberately avoids config plugins and custom native code so it runs in **Expo Go on SDK 54**. As a result, some capabilities are unavailable there and require a development build:
+Core library scan, playback, playlists, favorites, history, themes and storage info work in **Expo Go on SDK 54**. The following need a development build:
 
-- **Background audio & lock-screen/notification controls** – not available in Expo Go. On Android, playback pauses when the app is backgrounded; a foreground service (media notification, lock-screen controls) needs a development build and native configuration.
-- **Artwork & video thumbnails** – not extracted. Artwork uses gradient + initials placeholders; video rows use generated gradient placeholders.
-- **Advanced video controls** – brightness, subtitle/audio-track selection and fine-grained speed controls are delegated to the native `VideoView`; availability varies by platform and may require a dev build.
-- **Scoped storage / granular media permissions** – Android 13+ requests granular media permissions; behavior is handled by `expo-media-library` and may differ slightly between Expo Go and a production build.
-- **Web** – device scanning and SQLite are replaced by browser fallbacks (see [Web](#web)); the web library starts empty.
+- **Background audio/video** – `expo-audio` background mode and the `expo-video` media playback service are enabled through app config plugins.
+- **Notification playback actions** – Back, Play/Pause and Next use `expo-notifications` categories; the Android channel and foreground behavior require native configuration.
+- **Picture-in-Picture** – enabled through the `expo-video` config plugin.
+- **Full video media-session integration** – lock-screen metadata and native transport controls depend on platform media sessions.
 
-Everything else (library scan, playback, playlists, favorites, history, themes, storage info) works in Expo Go.
+Artwork is discovered from local cover images beside audio files, and video thumbnails are generated lazily with `expo-video`; both use native image URIs on Android/iOS. Web uses browser fallbacks (see [Web](#web)) and starts with an empty library.
 
 ## Verification
 
@@ -104,4 +106,4 @@ npx expo export -p android --clear   # production bundle sanity check
 ## Notes
 
 - `expo-asset` is pinned to `12.0.14` because the SDK-58 version pulled in by `expo-audio`'s peer range breaks module resolution.
-- Config plugins auto-added by `expo-audio` / `expo-video` / `expo-sqlite` / `expo-asset` were removed from `app.json` to stay Expo Go–only.
+- `app.json` enables the `expo-video`, `expo-media-library` and `expo-notifications` config plugins for background playback, granular permissions, Picture-in-Picture and notification actions.
