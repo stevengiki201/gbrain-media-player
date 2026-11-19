@@ -511,5 +511,7 @@ export class PlaybackManager {
     void clearPlaybackNotification();
     disposePlaybackNotifications();
     this.listeners.clear();
+    this.controlListeners.clear();
+    this.initialized = false;
   }
 }

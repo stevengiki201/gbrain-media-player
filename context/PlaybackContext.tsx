@@ -41,7 +41,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     manager.init();
     return () => {
       manager.setCallbacks({});
-      manager.destroy();
     };
   }, [manager, store]);
 
